@@ -1,0 +1,11 @@
+name: arg-flank
+channels:
+  - bioconda
+  - conda-forge
+dependencies:
+  - python=3.11
+  - prodigal
+  - diamond
+  - bedtools>=2.27
+  - samtools
+  - pandas
