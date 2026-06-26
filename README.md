@@ -1,4 +1,3 @@
-# quick_gene_context_extract
 # ARG Flanking-Region Extraction Pipeline
 
 A small pipeline that, starting from an assembly, finds antibiotic resistance
@@ -50,10 +49,10 @@ assembly.fasta
 - [samtools](http://www.htslib.org/)
 - Python 3 with `pandas`
 
-On TinkerCliffs or similar HPC, a quick conda env:
+On TinkerCliffs or similar HPC, build the env from `environment.yml`:
 
 ```bash
-conda create -n arg-flank -c bioconda -c conda-forge prodigal diamond bedtools samtools pandas
+conda env create -f environment.yml
 conda activate arg-flank
 ```
 
