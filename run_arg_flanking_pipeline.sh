@@ -25,6 +25,8 @@ Common options:
   -f, --flank-kb N            Flank size in kb to extract on each side of every ARG hit (default: 5)
   -m, --merge-distance N      Merge ARG hits within N bp of each other before padding (default: 0, no merging)
   -e, --evalue N               DIAMOND e-value threshold (default: 1e-10)
+  -I, --min-pident N            Minimum percent identity for a DIAMOND hit (default: 80)
+  -Q, --min-qcov N               Minimum percent query coverage for a DIAMOND hit (default: 80)
   -T, --threads N              Threads for DIAMOND (default: 4)
 
 ARG-label naming for split FASTA files (optional, see README):
@@ -47,6 +49,8 @@ PREFIX="sample"
 FLANK_KB=5
 MERGE_DIST=0
 EVALUE="1e-10"
+MIN_PIDENT=80
+MIN_QCOV=80
 THREADS=4
 SKIP_PRODIGAL=0
 SKIP_DIAMOND=0
@@ -67,6 +71,8 @@ while [[ $# -gt 0 ]]; do
     -f|--flank-kb) FLANK_KB="$2"; shift 2 ;;
     -m|--merge-distance) MERGE_DIST="$2"; shift 2 ;;
     -e|--evalue) EVALUE="$2"; shift 2 ;;
+    -I|--min-pident) MIN_PIDENT="$2"; shift 2 ;;
+    -Q|--min-qcov) MIN_QCOV="$2"; shift 2 ;;
     -T|--threads) THREADS="$2"; shift 2 ;;
     --stitle-sep) STITLE_SEP="$2"; shift 2 ;;
     --stitle-field) STITLE_FIELD="$2"; shift 2 ;;
@@ -107,6 +113,8 @@ echo "Assembly:        $ASSEMBLY"
 echo "Output dir:      $OUTDIR"
 echo "Flank size:      ${FLANK_KB} kb each side"
 echo "Merge distance:  ${MERGE_DIST} bp"
+echo "Min identity:    ${MIN_PIDENT}%"
+echo "Min query cover: ${MIN_QCOV}%"
 echo
 
 need() { command -v "$1" >/dev/null 2>&1 || { echo "ERROR: required tool not found in PATH: $1" >&2; exit 1; }; }
@@ -139,8 +147,10 @@ if [[ "$SKIP_DIAMOND" -eq 0 ]]; then
     -q "$ORF_FAA" \
     -d "$ARG_DB" \
     -o "$DIAMOND_TSV" \
-    --outfmt 6 qtitle stitle pident bitscore evalue \
+    --outfmt 6 qtitle stitle pident bitscore evalue qcovhsp \
     --evalue "$EVALUE" \
+    --id "$MIN_PIDENT" \
+    --query-cover "$MIN_QCOV" \
     --threads "$THREADS" \
     --max-target-seqs 1
 else

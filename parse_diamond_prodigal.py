@@ -26,7 +26,8 @@ import sys
 
 import pandas as pd
 
-COLUMNS = ["qtitle", "stitle", "pident", "bitscore", "evalue"]
+COLUMNS_BASE = ["qtitle", "stitle", "pident", "bitscore", "evalue"]
+COLUMNS_WITH_QCOV = COLUMNS_BASE + ["qcovhsp"]
 
 
 def parse_args():
@@ -67,7 +68,24 @@ def main():
     args = parse_args()
     os.makedirs(args.outdir, exist_ok=True)
 
-    df = pd.read_csv(args.diamond_tsv, sep="\t", header=None, names=COLUMNS)
+    # Pipeline runs DIAMOND with `--outfmt 6 qtitle stitle pident bitscore evalue qcovhsp`,
+    # but accept plain 5-column TSVs too (e.g. from --skip-diamond with an older outfmt).
+    with open(args.diamond_tsv) as fh:
+        first_line = fh.readline()
+    ncols = len(first_line.rstrip("\n").split("\t"))
+    if ncols >= 6:
+        columns = COLUMNS_WITH_QCOV
+        has_qcov = True
+    elif ncols == 5:
+        columns = COLUMNS_BASE
+        has_qcov = False
+    else:
+        sys.exit(
+            f"Unexpected number of columns ({ncols}) in {args.diamond_tsv}. "
+            f"Expected 5 (qtitle stitle pident bitscore evalue) or 6 (+ qcovhsp)."
+        )
+
+    df = pd.read_csv(args.diamond_tsv, sep="\t", header=None, names=columns)
     if df.empty:
         sys.exit(f"No rows found in {args.diamond_tsv} -- no ARG hits to process.")
 
@@ -86,8 +104,10 @@ def main():
     out_cols = [
         "contig", "orf", "start", "stop", "strand",
         "stitle", "pident", "bitscore", "evalue",
-        "partial", "start_codon", "rbs_motif", "rbs_spacer", "gc_cont",
     ]
+    if has_qcov:
+        out_cols.append("qcovhsp")
+    out_cols += ["partial", "start_codon", "rbs_motif", "rbs_spacer", "gc_cont"]
     processed_path = os.path.join(args.outdir, f"{args.prefix}.processed.tsv")
     df[out_cols].to_csv(processed_path, sep="\t", index=False)
 
